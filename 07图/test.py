@@ -141,7 +141,7 @@ class GrapgAL(Graph):
 
     def kruskal(self):  # 最小生成树算法
         """边表统计--优先队列--mst"""
-        """停止条件：边够了"""
+        """停止条件：边够了， 扩展机制：代表元是否相同"""
         mst, edges = [], []
         rep = [i for i in range(self._vnum)]  # 初始化代表元为自己
         for vi in range(self._vnum):  # 边表统计
@@ -163,7 +163,7 @@ class GrapgAL(Graph):
 
     def prim(self):
         """根据地--边表扩展--优先队列"""
-        """停止条件：节点够了"""
+        """停止条件：节点够了，扩展机制：前一节点是否确定"""
         mst = [None for i in range(self._vnum)]  # 树枝初始化
         cans = [(0, 0, 0)]                       # 候选边初始化
         count = 0                                # 连通区初始化
@@ -198,15 +198,83 @@ class GrapgAL(Graph):
         path.sort(key=lambda x:x[0][0])
         return path
 
+    def toposort_dfs(self):
+        # 生成入度表、零度链--> 拓扑排序
+        zero_v = -1
+        in_degree, top_sort = [0 for _ in range(self._vnum)], []
 
+        for vi in range(self._vnum):  # 建立入度表
+            for vj, weight in self.out_edges(vi):
+                in_degree[vj] += 1
+
+        for vi in range(self._vnum):  # 建立零度链
+            if in_degree[vi] == 0:
+                in_degree[vi] = zero_v  # 先指向当前零度索引
+                zero_v = vi  # 零度索引指向当前节点
+
+        while zero_v != -1:
+            vi = zero_v
+            zero_v = in_degree[zero_v]
+            top_sort.append(vi)
+
+            for vj, weight in self.out_edges(vi):
+                in_degree[vj] -= 1
+                if in_degree[vj] == 0:
+                    in_degree[vj] = zero_v
+                    zero_v = vj
+        return top_sort
+
+    def toposort_bfs(self):
+        from queue import Queue
+        # 生成入度表、零度链--> 拓扑排序
+        zero_que = Queue()
+        in_degree, top_sort = [0 for _ in range(self._vnum)], []
+
+        for vi in range(self._vnum):  # 建立入度表
+            for vj, weight in self.out_edges(vi):
+                in_degree[vj] += 1
+
+        for vi in range(self._vnum):  # 建立零度链
+            if in_degree[vi] == 0:
+                zero_que.put(vi)
+
+        while not zero_que.empty():
+            vi = zero_que.get()
+            top_sort.append(vi)
+
+            for vj, weight in self.out_edges(vi):
+                in_degree[vj] -= 1
+                if in_degree[vj] == 0:
+                    zero_que.put(vj)
+        return top_sort
+
+
+
+
+# mat = [
+#     [0, 10, 1, 0, 1, 0],  # 1 2 4
+#     [10, 0, 0, 1, 1, 0],  # 0 3 4
+#     [1, 0, 0, 0, 1, 1],  # 0 4 5
+#     [0, 1, 0, 0, 0, 0],  # 1
+#     [1, 1, 1, 0, 0, 0],  # 0 1 2
+#     [0, 0, 1, 0, 0, 0],  # 2
+# ]
 mat = [
-    [0, 10, 1, 0, 1, 0],  # 1 2 4
-    [10, 0, 0, 1, 1, 0],  # 0 3 4
-    [1, 0, 0, 0, 1, 1],  # 0 4 5
-    [0, 1, 0, 0, 0, 0],  # 1
-    [1, 1, 1, 0, 0, 0],  # 0 1 2
-    [0, 0, 1, 0, 0, 0],  # 2
+    [0, 1, 1, 0, 1, 0],  # 1 2 4
+    [0, 0, 0, 1, 1, 0],  # 3 4
+    [0, 0, 0, 0, 1, 1],  # 4 5
+    [0, 0, 0, 0, 0, 0],  #
+    [0, 0, 0, 0, 0, 0],  #
+    [0, 0, 0, 0, 0, 0],  #
 ]
-graph = GrapgAL(mat)
-print(graph.dijkstra(0))
 
+graph = GrapgAL(mat)
+print(graph.toposort_bfs())
+
+# 当代表元素不同时 kruskal 扩展
+# 当前一节点未知时 prim 扩展
+# dijkstra 和prim相似
+# 拓扑排序：用链表可以达到深度优先的效果，可以用队列转换为广度优先
+
+# [0, 2, 5, 1, 4, 3] 深度优先
+# [0, 1, 2, 3, 4, 5] 广度优先

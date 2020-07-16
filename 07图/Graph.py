@@ -227,27 +227,27 @@ class GraphAL(Graph):
         indegree, toposeq = [0] * vnum, []  # 入度表 和 拓扑序列
         zerov = -1  # 零度点索引初始化
         
-        for vi in range(vnum):  # 建立初始的入度表
+        for vi in range(vnum):  # 建立初始的入度表,入读就是每个节点有几个先驱
             for v, w in self.out_edges(vi):
                 indegree[v] += 1
         print('入度表',indegree)
                 
-        for vi in range(vnum):  # 建立初始的零度表
+        for vi in range(vnum):  # 建立初始的零度链
             if indegree[vi] == 0:
                 indegree[vi] = zerov  # 上一零度点索引（由于边表索引隐含为结点，所以也可以理解为结点）
                 zerov = vi  # 零度索引绑定到自己
         print('当前零度点位置', zerov)                
                 
-        for n in range(vnum+1):
-            if zerov == -1:
+        for _ in range(vnum+1):
+            if zerov == -1:  # 退出条件(已经没有零度点)
                 return toposeq   # 没有入度为0的点，返回False
             vi = zerov  # 当前访问的0度点
-            zerov = indegree[zerov] # 下一待访问0度点
+            zerov = indegree[zerov]  # 下一待访问0度点
             toposeq.append(vi)
 
             for v, w in self.out_edges(vi):
                 indegree[v] -= 1  # 关联节点入度减1
-                if  indegree[v] == 0:
+                if indegree[v] == 0:
                     indegree[v] = zerov  # 指向前面的待访问零度点
                     zerov = v
 
@@ -269,10 +269,10 @@ g2 = GraphAL(mat=mat)
 
 # print(g2.DFS_span_forest())
 #
-print(g2.Kruskal())
+# print(g2.Kruskal())
 
 # print(g2.Prim())
 #
 # print(g2.dijkstra(0))  # 前一节点，最短路径元组
 #
-# print(g2.topo_sort())
+print(g2.topo_sort())
