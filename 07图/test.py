@@ -165,19 +165,38 @@ class GrapgAL(Graph):
         """根据地--边表扩展--优先队列"""
         """停止条件：节点够了"""
         mst = [None for i in range(self._vnum)]  # 树枝初始化
-        cans = [(0, 0, 0)]  # 候选边初始化
-        count = 0  # 连通区初始化
+        cans = [(0, 0, 0)]                       # 候选边初始化
+        count = 0                                # 连通区初始化
         while count < self._vnum:
             weight, vi, vj = cans.pop()
-            if mst[vj]: continue  # 已经在连通区
+            if mst[vj]: continue                 # 已经在连通区
 
-            count += 1  # 扩展根据地
+            count += 1                           # 扩展根据地
             mst[vj] = ((vi, vj), weight)
             for vk, vk_weight in self.out_edges(vj):
-                cans.append((vk_weight, vj, vk))
-            cans.sort(reverse=True)  # 为什么要倒排呢，因为pop从栈尾弹出
-        mst.sort()  # 为了print容易观察
+                if not mst[vk]:
+                    cans.append((vk_weight, vj, vk))
+            cans.sort(reverse=True)              # 为什么要倒排呢，因为pop从栈尾弹出
+        mst.sort()                               # 为了print容易观察
         return mst
+
+    def dijkstra(self, v0):
+        path = [None for i in range(self._vnum)]  # 前一节点、长度
+        cans = [(0, v0, v0)]  # 到源点的距离、前一节点、后一节点
+        count = 0
+
+        while count < self._vnum and cans:
+            length, vi, vj = cans.pop()
+            if path[vj]: continue  # 因为vi已经在连通区
+            count += 1
+            path[vj] = ((vi, vj), length)
+
+            for vk, weight in self.out_edges(vj):
+                if not path[vk]:
+                    cans.append((path[vj][1] + weight, vj, vk))
+            cans.sort(reverse=True)
+        path.sort(key=lambda x:x[0][0])
+        return path
 
 
 mat = [
@@ -189,5 +208,5 @@ mat = [
     [0, 0, 1, 0, 0, 0],  # 2
 ]
 graph = GrapgAL(mat)
-print(graph.prim())
+print(graph.dijkstra(0))
 
