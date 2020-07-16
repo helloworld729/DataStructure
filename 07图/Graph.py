@@ -182,6 +182,7 @@ class GraphAL(Graph):
         return mst
     
     def Prim(self):
+        """根据地--边表扩展--优先队列"""
         vnum = self._vnum
         mst = [None] * vnum  # 当前连通区
         cans = [(0,0,0)]  # 记录候选边（w, vi, vj）
@@ -191,7 +192,7 @@ class GraphAL(Graph):
             w, vi, vj = cans.pop()  # 取当时最小边
             if mst[vj]:
                 continue
-            mst[vj]=((vi, vj),w)  # u是当前连通区、v是目标连通区
+            mst[vj]=((vi, vj), w)
             count += 1
             
             for vk, w_ in self.out_edges(vj):
@@ -202,8 +203,8 @@ class GraphAL(Graph):
     
     def dijkstra(self, v0):  # 最短路径
         vnum = self._vnum
-        paths = [None] * vnum # （前一节点， 最短路径长度）元组列表
-        cans = [(0,v0,v0)]  # 记录候选边（路径长度，候选节点前一节点， 当前候选节点）
+        paths = [None] * vnum  # （前一节点， 最短路径长度）元组列表
+        cans = [(0, v0, v0)]  # 记录候选边（路径长度，候选节点前一节点， 当前候选节点）
         count = 0  # 当前连通区节点数量
         
         while count < vnum and cans:
@@ -268,10 +269,10 @@ g2 = GraphAL(mat=mat)
 
 # print(g2.DFS_span_forest())
 #
-# print(g2.Kruskal())
+print(g2.Kruskal())
 
 # print(g2.Prim())
 #
-print(g2.dijkstra(0))  # 前一节点，最短路径元组
+# print(g2.dijkstra(0))  # 前一节点，最短路径元组
 #
 # print(g2.topo_sort())

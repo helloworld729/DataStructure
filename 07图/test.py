@@ -1,53 +1,40 @@
 class GraphError(ValueError):
     pass
-
-
 class Graph():
     def __init__(self, mat, unconn=0):
-        vnum = len(mat)  # 节点数目
-        for x in mat:
-            if len(x) != vnum:
-                raise ValueError("Arguments for Graph.")
+        self._vnum = len(mat)
+        for row in mat:
+            if len(row) != self._vnum:
+                raise GraphError
         self._mat = mat
         self._unconn = unconn
-        self._vnum = vnum
 
     def vertex_num(self):
-        """结点数目"""
         return self._vnum
 
-    def is_invalid(self, v):
-        """合法性检查"""
-        #         print(v, self._vnum)
+    def is_not_valid(self, v):
         return v < 0 or v >= self._vnum
 
     def add_vertex(self):
-        """增加结点"""
-        raise GraphError("not support...")
+        raise GraphError("not support now")
 
-    def add_edge(self, vi, vj, val=1):
-        """创建边"""
-        if self.is_invalid(vi) or self.is_invalid(vj):
-            raise GraphError('vi or vj is invalid')
+    def add_edge(self, vi, vj, val=1):  # 增
+        if self.is_not_valid(vi) or self.is_not_valid(vj):
+            raise GraphError("vi or vj is not valid")
         self._mat[vi][vj] = val
 
-    def get_edge(self, vi, vj):
-        """根据索引获取边的信息"""
-        if self.is_invalid(vi) or self.is_invalid(vj):
-            raise GraphError('vi or vj is invalid')
+    def get_edge(self, vi, vj):  # 查
+        if self.is_not_valid(vi) or self.is_not_valid(vj):
+            raise GraphError("vi or vj is not valid")
         return self._mat[vi][vj]
 
-    def __str__(self):
-        return "[\n" + ",\n".join(map(str, self._mat)) + "\n]" + "\nunconn: " + str(self._unconn)
-
-    def out_edges(self, vi):
-        """返回某个节点对应的边的信息"""
-        if self.is_invalid(vi):
-            raise GraphError('vi or vj is invalid')
+    def out_edges(self, vi):  # 返回节点对应的边信息
+        if self.is_not_valid(vi):
+            raise GraphError("vi is not valid")
         return self._out_edges(self._mat[vi], self._unconn)
 
     @staticmethod
-    def _out_edges(row, unconn=0):  # 返回节点的有效边列表
+    def _out_edges(row, unconn=0):
         edges = []
         for i in range(len(row)):
             if row[i] != unconn:
@@ -55,22 +42,41 @@ class Graph():
         return edges
 
 
-class GraphAL(Graph):
-    def __init__(self, mat=[], unconn=0):
+class GrapgAL(Graph):
+    def __init__(self, mat, unconn=0):
         vnum = len(mat)
         for row in mat:
             if len(row) != vnum:
-                raise GraphError('初始化不是方阵')
-        # 不是矩阵，是列表嵌套
-        self._mat = [self._out_edges(mat[i], 0) for i in range(vnum)]
-        self._vnum = vnum  # 节点数目
+                raise GraphError("不是方阵")
+        self._mat = [self._out_edges(mat[i], 0) for i in range(vnum)]  # 二维列表，不是矩阵
+        self._vnum = vnum
         self._unconn = unconn
-        self.DFS_seqs = []
+
+    def add_vertex(self):
+        self._mat.append([])
+        self._vnum += 1
+        return self._vnum - 1
+
+    def add_edge(self, vi, vj, val=1):
+        if self.is_not_valid(vi) or self.is_not_valid(vj):
+            raise GraphError("节点非法")
+        row = self._mat[vi]
+        i = 0
+        while i < len(row):
+            if vj == row[i][0]:
+                self._mat[vi][i] = (vj, val)  # i 是邻接边的在边表索引，不是邻接点的序号
+                return
+            # if vj < i:  # TODO
+            #     break
+            if vj < row[i][0]:
+                break
+            i += 1
+        self._mat[vi].insert(i, (vj, val))
 
     def get_edge(self, vi, vj):
-        """获取两点之间边的权重"""
-        if self.is_invalid(vi) or self.is_invalid(vi):
-            raise GraphError('结点非法')
+        """获取两个节点之间边信息"""
+        if self.is_not_valid(vi) or self.is_not_valid(vj):
+            raise GraphError("invalid")
         for con_info in self._mat[vi]:
             if con_info[0] == vj:
                 return con_info[1]
@@ -78,127 +84,110 @@ class GraphAL(Graph):
 
     def out_edges(self, vi):
         """返回能结点的所有关联边"""
-        if self.is_invalid(vi):
+        if self.is_not_valid(vi):
             raise GraphError("结点非法")
         return self._mat[vi]
 
-    def dfs_graph(self, vi):
-        visited = [None] * self._vnum
-        visited[0] = 1
-        order = []
-        length = 0
-        stack = [(vi, v, w) for v, w in self.out_edges(vi)]  # 前节点、后节点、权重
-        while stack and length < self._vnum:
-            vi, vj, wj = stack.pop()
-            if not visited[vj]:
-                visited[vj] = 1
-                order.append((vi, vj))
-                length += 1
-                stack.extend([(vj, vk, w) for vk, w in self.out_edges(vj)])
-        return order
-
-    def dfs_recur(self, v):
-        visited = [0] * self._vnum
-        visited[0] = 1
-        order = []
-        length = 0
+    def DFS_recur(self, v):
+        """基于递归的深度优先"""
+        visited = []
         def dfs(v):
-            nonlocal length
-            if length == self._vnum:
+            if v not in visited:  # 当前点
+                visited.append(v)
+            edges = self.out_edges(v)
+            edges = [edge[0] for edge in edges]
+            diff = [j for j in edges if j not in visited]
+            if len(diff) == 0:
                 return
-            for vj, w in self.out_edges(v):
-                if not visited[vj]:
-                    visited[vj] = 1
-                    order.append((v, vj))
-                    length += 1
-                    dfs(vj)
+            for next_v in diff:  # 邻接点
+                dfs(next_v)
         dfs(v)
-        return order
+        return visited
 
-    def kruskal(self):
-        """边表统计，据权重排序---跨域判断---合并、刷新代表"""
-        rep = list(range(self._vnum))  # 代表元初始化
-        edges, mst = [], []
-        for i in range(self._vnum):  # 边表统计
-            edge = self.out_edges(i)  # i是源点，edge是目标点，权重的元组列表
-            for e in edge:
-                edges.append((e[1], i, e[0]))
-        edges.sort(reverse=True)
+    def DFS_graph(self, v0):
+        """非递归思路：压栈的是（访问索引，边表）"""
+        visited = [v0]
+        edges = self.out_edges(v0)
+        st = []
+        st.append((0, edges))
+        while st:
+            i, edges_lst = st.pop()
+            st.append((i + 1, edges_lst)) if i + 1 <= len(edges_lst) - 1 else None
+            vi = edges_lst[i][0]
+            if vi not in visited:
+                visited.append(vi)
+                st.append((0, self.out_edges(vi)))
+        return visited
 
-        while edges:
-            w, vi, vj = edges.pop()
-            if rep[vi] != rep[vj]:  # 跨域判断
-                rep[vj] = rep[vi]
-                mst.append((vi, vj, w))
-                if len(mst) == self._vnum-1:
-                    break
+    def DFS_forest(self):
+        """深度遍历生成树"""
+        forest = [(0,0)]
+        visited = [0]
+        def dfs(v):
+            edges = self.out_edges(v)
+            v_lst = [edge[0] for edge in edges]
+            diff = [i for i in v_lst if i not in visited]
+            if len(diff) == 0: return
+            for vj in diff:
+                # 为什么需要再次判断？(注意递归的现场保护)
+                # 因为深度推进的过程中，vj可能已经被访问，再回退到vj就多余了。
+                if vj not in visited:
+                    forest.append((v, vj))
+                    visited.append(vj)
+                    dfs(vj)
+        dfs(0)
+        forest.sort(key=lambda x: x[1])
+        return forest
 
-                for j in range(len(rep)):  # 代表元刷新
-                    if rep[j] == rep[vj]:
-                        rep[j] = rep[vi]
+    def kruskal(self):  # 最小生成树算法
+        """边表统计--优先队列--mst"""
+        """停止条件：边够了"""
+        mst, edges = [], []
+        rep = [i for i in range(self._vnum)]  # 初始化代表元为自己
+        for vi in range(self._vnum):  # 边表统计
+            vj = self.out_edges(vi)
+            for index, weight in vj:
+                edges.append((weight, vi, index))
+        edges.sort()  # 优先队列
+
+        for weight, vi, vj in edges:
+            if rep[vi] != rep[vj]:
+                mst.append(((vi, vj), weight))
+            if len(mst) == self._vnum - 1:
+                break
+            srep, trep = rep[vi], rep[vj]
+            for i in range(len(rep)):
+                if rep[i] == srep:
+                    rep[i] = trep
         return mst
 
     def prim(self):
-        """求已知和未知之间的最短路径"""
+        """根据地--边表扩展--优先队列"""
+        """停止条件：节点够了"""
+        mst = [None for i in range(self._vnum)]  # 树枝初始化
+        cans = [(0, 0, 0)]  # 候选边初始化
+        count = 0  # 连通区初始化
+        while count < self._vnum:
+            weight, vi, vj = cans.pop()
+            if mst[vj]: continue  # 已经在连通区
 
-        count = 0
-        cans = [(0,0,0)]
-        mst = [0] * self._vnum
-
-        while cans and count < self._vnum:
-            w, vi, vj = cans.pop()
-            if mst[vj]:
-                continue
-            mst[vj] = ((vi, vj), w)  # 扩展连通区
-            count += 1
-
-            for vk, w_ in self.out_edges(vj):
-                if not mst[vk]:
-                    # 扩展非联通区
-                    cans.append((w_, vj, vk))
-            cans.sort(reverse=True)
-
-        return mst
-
-    def dijkstra(self, v):
-        """类似于prim算法，只是路径要累加"""
-        cans = [(0,v,v)]
-        mst = [0] * self._vnum
-        count = 0
-
-        while count < self._vnum and cans:
-            length, vi, vj = cans.pop()
-            if mst[vj]:
-                continue
-            mst[vj] = ((vi, vj), length)
-            count += 1
-
-            for vk, w_ in self.out_edges(vj):
-                if not mst[vk]:
-                    cans.append((length + w_, vj, vk))
-            cans.sort(reverse=True)
+            count += 1  # 扩展根据地
+            mst[vj] = ((vi, vj), weight)
+            for vk, vk_weight in self.out_edges(vj):
+                cans.append((vk_weight, vj, vk))
+            cans.sort(reverse=True)  # 为什么要倒排呢，因为pop从栈尾弹出
+        mst.sort()  # 为了print容易观察
         return mst
 
 
 mat = [
-    [0, 1, 4, 3],
-    [1, 0, 0, 1],
-    [4, 0, 0, 2],
-    [3, 1, 2, 0]
+    [0, 10, 1, 0, 1, 0],  # 1 2 4
+    [10, 0, 0, 1, 1, 0],  # 0 3 4
+    [1, 0, 0, 0, 1, 1],  # 0 4 5
+    [0, 1, 0, 0, 0, 0],  # 1
+    [1, 1, 1, 0, 0, 0],  # 0 1 2
+    [0, 0, 1, 0, 0, 0],  # 2
 ]
+graph = GrapgAL(mat)
+print(graph.prim())
 
-g2 = GraphAL(mat=mat)
-
-# print(g2)
-
-# print(g2.dfs_graph(0))
-
-# print(g2.dfs_recur(0))
-
-# print(g2.kruskal())
-#
-# print(g2.prim())
-#
-# print(g2.dijkstra(0))  # 前一节点，最短路径元组
-#
-# print(g2.topo_sort())
