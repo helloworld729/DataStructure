@@ -192,7 +192,7 @@ class GrapgAL(Graph):
             path[vj] = ((vi, vj), length)
 
             for vk, weight in self.out_edges(vj):
-                if not path[vk]:
+                if path[vk] is None:
                     cans.append((path[vj][1] + weight, vj, vk))
             cans.sort(reverse=True)
         path.sort(key=lambda x:x[0][0])

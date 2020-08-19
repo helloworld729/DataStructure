@@ -10,7 +10,7 @@ def q_sort0(lst, l, r):
         return
 
     i, j = l, r  # l和r要控制递归
-    pivot = lst[i]  # 选取第一个元素作为pivot
+    pivot = lst[i]  # 选取第一个元素作为pivot 存储
 
     while i < j:    # 处理办法：partition
         while i < j and lst[j] >= pivot:  # 比基准大则左滑，小则停止

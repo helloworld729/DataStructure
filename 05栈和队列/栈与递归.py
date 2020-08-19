@@ -25,7 +25,7 @@ def knap(weights, wlist):
         return False
 
 
-if knap(10, [1, 2, 3, 5, 4, 29]):
+if knap(12, [1, 2, 3, 5, 4, 29]):
     print("有解: " + info[: -1])
 elif less:
     print("背包太小")
